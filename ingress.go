@@ -1,4 +1,4 @@
-package distributed_cache
+package main
 
 import (
 	"fmt"
