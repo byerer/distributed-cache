@@ -1,4 +1,4 @@
-package main
+package consistenthash
 
 import (
 	"hash/crc32"
@@ -14,7 +14,7 @@ type Map struct {
 	hashMap  map[int]string
 }
 
-func NewMap(replicas int, fn Hash) *Map {
+func New(replicas int, fn Hash) *Map {
 	m := &Map{
 		replicas: replicas,
 		hash:     fn,
