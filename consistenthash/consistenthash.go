@@ -3,6 +3,7 @@ package consistenthash
 import (
 	"hash/crc32"
 	"sort"
+	"strconv"
 )
 
 type Hash func(data []byte) uint32
@@ -29,7 +30,7 @@ func New(replicas int, fn Hash) *Map {
 func (m *Map) Add(keys ...string) {
 	for _, key := range keys {
 		for i := 0; i < m.replicas; i++ {
-			hash := int(m.hash([]byte(key + string(i))))
+			hash := int(m.hash([]byte(key + strconv.Itoa(i))))
 			m.keys = append(m.keys, hash)
 			m.hashMap[hash] = key
 		}
