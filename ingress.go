@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	pb "distributed-cache/gen/v1"
 	"distributed-cache/singleflight"
 )
 
@@ -107,9 +108,14 @@ func (g *Group) populateCache(key string, value ByteView) {
 }
 
 func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
-	bytes, err := peer.Get(g.name, key)
+	req := &pb.GetRequest{
+		Group: g.name,
+		Key:   key,
+	}
+	res := &pb.GetResponse{}
+	err := peer.Get(req, res)
 	if err != nil {
 		return ByteView{}, err
 	}
-	return ByteView{b: bytes}, nil
+	return ByteView{b: res.Value}, nil
 }
