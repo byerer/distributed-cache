@@ -2,7 +2,6 @@ package distributed_cache
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	pb "distributed-cache/gen/v1"
@@ -42,6 +41,7 @@ func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
 		name:      name,
 		getter:    getter,
 		mainCache: cache{cacheBytes: cacheBytes},
+		sf:        &singleflight.Group{},
 	}
 	groups[name] = g
 	return g
@@ -60,7 +60,6 @@ func (g *Group) Get(key string) (ByteView, error) {
 	}
 
 	if v, ok := g.mainCache.get(key); ok {
-		log.Println("[GeeCache] hit")
 		return v, nil
 	}
 
