@@ -1,4 +1,4 @@
-package main
+package distributed_cache
 
 type ByteView struct {
 	b []byte

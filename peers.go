@@ -1,4 +1,4 @@
-package main
+package distributed_cache
 
 import pb "distributed-cache/gen/v1"
 

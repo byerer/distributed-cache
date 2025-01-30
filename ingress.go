@@ -1,4 +1,4 @@
-package main
+package distributed_cache
 
 import (
 	"fmt"
@@ -81,7 +81,6 @@ func (g *Group) load(key string) (value ByteView, err error) {
 				if value, err = g.getFromPeer(peer, key); err == nil {
 					return value, nil
 				}
-				log.Println("[Cache] Failed to get from peer", err)
 			}
 		}
 		return g.getLocally(key)
