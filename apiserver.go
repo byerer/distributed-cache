@@ -11,7 +11,7 @@ import (
 
 	"distributed-cache/consistenthash"
 	pb "distributed-cache/gen/v1"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 const (

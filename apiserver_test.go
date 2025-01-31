@@ -9,7 +9,7 @@ import (
 	"time"
 
 	pb "distributed-cache/gen/v1"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestHTTPPool_ServeHTTP(t *testing.T) {
