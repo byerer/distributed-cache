@@ -3,6 +3,7 @@ package distributed_cache
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	pb "distributed-cache/gen/v1"
 	"distributed-cache/singleflight"
@@ -102,7 +103,7 @@ func (g *Group) getLocally(key string) (ByteView, error) {
 }
 
 func (g *Group) populateCache(key string, value ByteView) {
-	g.mainCache.add(key, value)
+	g.mainCache.add(key, value, time.Time{})
 }
 
 func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
