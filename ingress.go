@@ -22,7 +22,7 @@ func (f GetterFunc) Get(key string) ([]byte, error) {
 type Group struct {
 	name      string
 	getter    Getter
-	mainCache cache
+	mainCache Cache
 	peers     PeerPicker
 	sf        *singleflight.Group
 }
@@ -41,7 +41,7 @@ func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
 	g := &Group{
 		name:      name,
 		getter:    getter,
-		mainCache: cache{cacheBytes: cacheBytes},
+		mainCache: Cache{maxBytes: cacheBytes},
 		sf:        &singleflight.Group{},
 	}
 	groups[name] = g
