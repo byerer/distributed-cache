@@ -10,6 +10,8 @@ import (
 type LFU struct {
 	cache     map[string]*list.Element
 	frequency map[int]*list.List
+	remover   strategy.EntryRemover
+	OnEvicted func(key string, value strategy.Value)
 }
 
 type entry struct {
@@ -19,29 +21,27 @@ type entry struct {
 	expire time.Time
 }
 
-func NewLFU(cache map[string]*list.Element) *LFU {
+func New(onEvicted func(string, strategy.Value)) *LFU {
 	return &LFU{
-		cache:     cache,
+		cache:     make(map[string]*list.Element),
 		frequency: make(map[int]*list.List),
+		OnEvicted: func(key string, value strategy.Value) {
+			if onEvicted != nil {
+				onEvicted(key, value)
+			}
+		},
 	}
 }
 
 func (l *LFU) Get(key string) (value strategy.Value, ok bool) {
 	if ele, ok := l.cache[key]; ok {
 		kv := ele.Value.(*entry)
+		l.removeElement(ele)
 		if !kv.expire.IsZero() && kv.expire.Before(time.Now()) {
-			l.removeElement(ele)
 			return nil, false
 		}
 		kv.freq++
-		if l.frequency[kv.freq] == nil {
-			l.frequency[kv.freq] = list.New()
-		}
-		l.frequency[kv.freq].PushFront(ele)
-		l.frequency[kv.freq-1].Remove(ele)
-		if l.frequency[kv.freq-1].Len() == 0 {
-			delete(l.frequency, kv.freq-1)
-		}
+		l.addElement(kv)
 		return kv.value, true
 	}
 	return
@@ -57,27 +57,39 @@ func (l *LFU) Add(key string, value strategy.Value, expire time.Time) {
 		kv := ele.Value.(*entry)
 		kv.value = value
 		kv.expire = expire
+		l.removeElement(ele)
 		kv.freq++
-		if l.frequency[kv.freq] == nil {
-			l.frequency[kv.freq] = list.New()
-		}
-		l.frequency[kv.freq].PushFront(ele)
-		l.frequency[kv.freq-1].Remove(ele)
-		if l.frequency[kv.freq-1].Len() == 0 {
-			delete(l.frequency, kv.freq-1)
-		}
+		l.addElement(kv)
 	} else {
-		if l.frequency[1] == nil {
-			l.frequency[1] = list.New()
-		}
-		ele := l.frequency[1].PushFront(&entry{
+		e := l.addElement(&entry{
 			freq:   1,
 			key:    key,
 			value:  value,
 			expire: expire,
 		})
-		l.cache[key] = ele
+		l.cache[key] = e
 	}
+}
+
+func (l *LFU) RemoveOldest() {
+	minFreq := -1
+	for freq := range l.frequency {
+		if minFreq == -1 || freq < minFreq {
+			minFreq = freq
+		}
+	}
+
+	if minFreq != -1 {
+		ll := l.frequency[minFreq]
+		if ll != nil && ll.Len() > 0 {
+			ele := ll.Back()
+			l.removeElement(ele)
+		}
+	}
+}
+
+func (l *LFU) SetRemover(remover strategy.EntryRemover) {
+	l.remover = remover
 }
 
 func (l *LFU) removeElement(ele *list.Element) {
@@ -87,4 +99,14 @@ func (l *LFU) removeElement(ele *list.Element) {
 	if l.frequency[kv.freq].Len() == 0 {
 		delete(l.frequency, kv.freq)
 	}
+	if l.remover != nil {
+		l.remover.OnEntryRemoved(kv.key, kv.value)
+	}
+}
+
+func (l *LFU) addElement(kv *entry) *list.Element {
+	if l.frequency[kv.freq] == nil {
+		l.frequency[kv.freq] = list.New()
+	}
+	return l.frequency[kv.freq].PushFront(kv)
 }

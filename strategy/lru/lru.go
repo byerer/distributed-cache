@@ -1,22 +1,30 @@
-package strategy
+package lru
 
 import (
 	"container/list"
 	"time"
+
+	"distributed-cache/strategy"
 )
 
 type LRU struct {
 	ll        *list.List
 	cache     map[string]*list.Element
-	OnEvicted func(key string, value Value)
-	remover   EntryRemover
+	OnEvicted func(key string, value strategy.Value)
+	remover   strategy.EntryRemover
 }
 
-func NewLRU(cache map[string]*list.Element, onEvicted func(string, Value)) *LRU {
+type entry struct {
+	key    string
+	value  strategy.Value
+	expire time.Time
+}
+
+func New(onEvicted func(string, strategy.Value)) *LRU {
 	return &LRU{
 		ll:    list.New(),
-		cache: cache,
-		OnEvicted: func(key string, value Value) {
+		cache: make(map[string]*list.Element),
+		OnEvicted: func(key string, value strategy.Value) {
 			if onEvicted != nil {
 				onEvicted(key, value)
 			}
@@ -24,7 +32,7 @@ func NewLRU(cache map[string]*list.Element, onEvicted func(string, Value)) *LRU 
 	}
 }
 
-func (c *LRU) Get(key string) (value Value, ok bool) {
+func (c *LRU) Get(key string) (value strategy.Value, ok bool) {
 	if c.cache == nil {
 		c.cache = make(map[string]*list.Element)
 		c.ll = list.New()
@@ -56,7 +64,7 @@ func (c *LRU) RemoveOldest() {
 	}
 }
 
-func (c *LRU) Add(key string, value Value, expire time.Time) {
+func (c *LRU) Add(key string, value strategy.Value, expire time.Time) {
 	if c.cache == nil {
 		c.cache = make(map[string]*list.Element)
 		c.ll = list.New()
@@ -72,7 +80,7 @@ func (c *LRU) Add(key string, value Value, expire time.Time) {
 	}
 }
 
-func (c *LRU) SetRemover(remover EntryRemover) {
+func (c *LRU) SetRemover(remover strategy.EntryRemover) {
 	c.remover = remover
 }
 

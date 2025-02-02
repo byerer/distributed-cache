@@ -1,7 +1,6 @@
 package lfu
 
 import (
-	"container/list"
 	"testing"
 	"time"
 )
@@ -15,8 +14,7 @@ func (v *value) Len() int {
 }
 
 func TestLFU_Basic(t *testing.T) {
-	cache := make(map[string]*list.Element)
-	lfu := NewLFU(cache)
+	lfu := New(nil)
 	lfu.Add("key1", &value{"value1"}, time.Time{})
 	if _, ok := lfu.Get("key1"); !ok {
 		t.Fatalf("lfu hit key1=value1 failed")

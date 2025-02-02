@@ -4,6 +4,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"distributed-cache/strategy/lfu"
+	"distributed-cache/strategy/lru"
 )
 
 func TestCache_Basic(t *testing.T) {
@@ -22,15 +25,13 @@ func TestCache_Basic(t *testing.T) {
 	}
 }
 
-func TestCache_MaxBytes(t *testing.T) {
+func TestCache_LRU(t *testing.T) {
 	k1, k2, k3 := "key1", "key2", "key3"
 	v1, v2, v3 := ByteView{b: []byte("value1")}, ByteView{b: []byte("value2")}, ByteView{b: []byte("value3")}
 
 	// maxBytes设置为只能容纳两个键值对的大小
 	maxBytes := int64(len(k1) + v1.Len() + len(k2) + v2.Len())
-	c := &Cache{
-		maxBytes: maxBytes,
-	}
+	c := NewCache(maxBytes, lru.New(nil))
 
 	c.add(k1, v1, time.Time{})
 	c.add(k2, v2, time.Time{})
@@ -47,6 +48,32 @@ func TestCache_MaxBytes(t *testing.T) {
 	if _, ok := c.get(k3); !ok {
 		t.Fatalf("maxBytes test failed: k3 should exist")
 	}
+}
+
+func TestCache_LFU(t *testing.T) {
+	k1, k2, k3 := "key1", "key2", "key3"
+	v1, v2, v3 := ByteView{b: []byte("value1")}, ByteView{b: []byte("value2")}, ByteView{b: []byte("value3")}
+
+	// maxBytes设置为只能容纳两个键值对的大小
+	maxBytes := int64(len(k1) + v1.Len() + len(k2) + v2.Len())
+	c := NewCache(maxBytes, lfu.New(nil))
+
+	c.add(k1, v1, time.Time{})
+	c.add(k2, v2, time.Time{})
+	c.add(k3, v3, time.Time{})
+
+	// k1应该被淘汰
+	if _, ok := c.get(k1); ok {
+		t.Fatalf("maxBytes test failed: k1 should be evicted")
+	}
+	// k2和k3应该存在
+	if _, ok := c.get(k2); !ok {
+		t.Fatalf("maxBytes test failed: k2 should exist")
+	}
+	if _, ok := c.get(k3); !ok {
+		t.Fatalf("maxBytes test failed: k3 should exist")
+	}
+
 }
 
 func TestCache_Expire(t *testing.T) {
