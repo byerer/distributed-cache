@@ -20,16 +20,23 @@ type entry struct {
 	expire time.Time
 }
 
-func New(onEvicted func(string, strategy.Value)) *LRU {
-	return &LRU{
+type Option func(*LRU)
+
+func WithOnEvicted(onEvicted func(string, strategy.Value)) Option {
+	return func(lru *LRU) {
+		lru.OnEvicted = onEvicted
+	}
+}
+
+func New(option ...Option) *LRU {
+	l := &LRU{
 		ll:    list.New(),
 		cache: make(map[string]*list.Element),
-		OnEvicted: func(key string, value strategy.Value) {
-			if onEvicted != nil {
-				onEvicted(key, value)
-			}
-		},
 	}
+	for _, opt := range option {
+		opt(l)
+	}
+	return l
 }
 
 func (c *LRU) Get(key string) (value strategy.Value, ok bool) {

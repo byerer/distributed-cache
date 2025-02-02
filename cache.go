@@ -32,7 +32,7 @@ func (c *Cache) add(key string, value ByteView, expire time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.eviction == nil {
-		c.eviction = lru.New(nil)
+		c.eviction = lru.New()
 		c.eviction.SetRemover(c)
 	}
 	c.eviction.Add(key, value, expire)
@@ -46,7 +46,7 @@ func (c *Cache) get(key string) (value ByteView, ok bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.eviction == nil {
-		c.eviction = lru.New(nil)
+		c.eviction = lru.New()
 		c.eviction.SetRemover(c)
 	}
 	if v, ok := c.eviction.Get(key); ok {

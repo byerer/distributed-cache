@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"distributed-cache/strategy"
 	"distributed-cache/strategy/lfu"
 	"distributed-cache/strategy/lru"
 )
@@ -56,7 +57,12 @@ func TestCache_LFU(t *testing.T) {
 
 	// maxBytes设置为只能容纳两个键值对的大小
 	maxBytes := int64(len(k1) + v1.Len() + len(k2) + v2.Len())
-	c := NewCache(maxBytes, lfu.New(nil))
+	c := NewCache(
+		maxBytes,
+		lfu.New(lfu.WithOnEvicted(func(key string, value strategy.Value) {
+			t.Logf("key=%s, value=%s is evicted\n", key, value)
+		})),
+	)
 
 	c.add(k1, v1, time.Time{})
 	c.add(k2, v2, time.Time{})
@@ -67,6 +73,12 @@ func TestCache_LFU(t *testing.T) {
 		t.Fatalf("maxBytes test failed: k1 should be evicted")
 	}
 	// k2和k3应该存在
+	if _, ok := c.get(k2); !ok {
+		t.Fatalf("maxBytes test failed: k2 should exist")
+	}
+	if _, ok := c.get(k3); !ok {
+		t.Fatalf("maxBytes test failed: k3 should exist")
+	}
 	if _, ok := c.get(k2); !ok {
 		t.Fatalf("maxBytes test failed: k2 should exist")
 	}

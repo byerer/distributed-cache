@@ -14,7 +14,7 @@ func (v *value) Len() int {
 }
 
 func TestLFU_Basic(t *testing.T) {
-	lfu := New(nil)
+	lfu := New()
 	lfu.Add("key1", &value{"value1"}, time.Time{})
 	if _, ok := lfu.Get("key1"); !ok {
 		t.Fatalf("lfu hit key1=value1 failed")
